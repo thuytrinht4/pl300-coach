@@ -251,9 +251,12 @@ const hasAns = sel => (sel || []).some(x => x != null);
 const normSel = (q, sel) => q.parts ? q.parts.map((p, i) => sel[i] ?? null) : sel.slice().sort();
 // Question source filter: original bank, the exam bank (src:"exam"), or both.
 const SOURCES = [{k:"all", t:"All"}, {k:"orig", t:"Original"}, {k:"exam", t:"Exam bank"}];
-const POOL = () => S.prefs.src === "orig" ? BANK.filter(q => q.src !== "exam") : S.prefs.src === "exam" ? BANK.filter(q => q.src === "exam") : BANK;
-const inPool = id => { const q = BYID[id]; return q && (S.prefs.src === "orig" ? q.src !== "exam" : S.prefs.src === "exam" ? q.src === "exam" : true); };
-const srcSeg = () => BANK.some(q => q.src === "exam") ? `<div class="seg" role="group" aria-label="Question source">${SOURCES.map(s => `<button type="button" data-src="${s.k}" aria-pressed="${S.prefs.src === s.k}">${s.t}</button>`).join("")}</div>` : "";
+// The switch only exists when the page has both sources (the GitHub copy is original-only, Cloudflare exam-only).
+const MIXED = BANK.some(q => q.src === "exam") && BANK.some(q => q.src !== "exam");
+const SRC = () => MIXED ? S.prefs.src : "all";
+const POOL = () => SRC() === "orig" ? BANK.filter(q => q.src !== "exam") : SRC() === "exam" ? BANK.filter(q => q.src === "exam") : BANK;
+const inPool = id => { const q = BYID[id]; return q && (SRC() === "orig" ? q.src !== "exam" : SRC() === "exam" ? q.src === "exam" : true); };
+const srcSeg = () => MIXED ?`<div class="seg" role="group" aria-label="Question source">${SOURCES.map(s => `<button type="button" data-src="${s.k}" aria-pressed="${S.prefs.src === s.k}">${s.t}</button>`).join("")}</div>` : "";
 
 /* ================= storage: per-user docs, cloud (db) with browser fallback ================= */
 // Docs (all private to the signed-in person, under data/users/<id>/):
